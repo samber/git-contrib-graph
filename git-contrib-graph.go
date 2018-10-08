@@ -231,7 +231,6 @@ func getRepo(git_path string, git_remote string) object.CommitIter {
 }
 
 func getConfig() (string, string) {
-	// help        = flag.Bool("help", nil, "Display usage")
 	git_path := flag.String("git-path", "", "Fetch logs from local git repository (bare or normal)")
 	git_remote := flag.String("git-remote", "", "Fetch logs from remote git repository Github, Gitlab...")
 	no_colors := flag.Bool("no-colors", false, "Disabled colors in output")
@@ -241,8 +240,6 @@ func getConfig() (string, string) {
 	flag.BoolVar(&FULL_GRAPH, "full-graph", false, "Display days without contributions")
 	flag.Parse()
 
-	// if *help == true {
-	//}
 	if *git_path == "" && *git_remote == "" {
 		fmt.Println("Please provide a --git-path or --git-remote argument\n")
 		flag.PrintDefaults()

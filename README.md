@@ -9,7 +9,6 @@ I've been developing this tool for getting a fast overview of student involvemen
 ## Usage
 
 ```sh
-$ go get gopkg.in/src-d/go-git.v4
 $ go get github.com/samber/git-contrib-graph
 
 $ git-contrib-graph
@@ -33,7 +32,9 @@ Usage of git-contrib-graph:
 Display crontribs per week, with color and even weeks without any commit.
 
 ```sh
-$ git-contrib-graph --git-remote https://github.com/samber/invoice-as-a-service --interval day --full-graph --interval month
+$ git-contrib-graph --git-remote https://github.com/samber/invoice-as-a-service \
+	--full-graph \
+	--interval month
 
 Repo: https://github.com/samber/invoice-as-a-service
 
@@ -138,12 +139,18 @@ docker run --rm \
 
 ## Contributing
 
+⚠ Quick and dirty project ;)
+
 ### Run
 
-No dependencies.
-
 ```sh
-go run git-contrib-graph.go --git-remote https://github.com/samber/invoice-as-a-service --full-graph --max-columns 100 --interval week
+$ go get gopkg.in/src-d/go-git.v4
+$ go run git-contrib-graph.go --git-remote https://github.com/samber/invoice-as-a-service \
+	--full-graph \
+	--max-columns 100 \
+	--interval week
+
+...
 ```
 
 ### About git api and go-git library
