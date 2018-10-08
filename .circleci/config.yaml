@@ -2,14 +2,11 @@ version: 2
 jobs:
   build:
     docker:
-      - image: golang:stretch
+      - image: circleci/golang:1.11
+    working_directory: /go/src/github.com/{{ORG_NAME}}/{{REPO_NAME}}
     steps:
       - checkout
+      - run: go get -v -t -d ./...
       - run: go build
-  verify:
-    docker:
-      - image: golang:stretch
-    steps:
-      - checkout
       - run: go vet
       - run: go lint
