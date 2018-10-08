@@ -1,0 +1,15 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: golang:stretch
+    steps:
+      - checkout
+      - run: go build
+  verify:
+    docker:
+      - image: golang:stretch
+    steps:
+      - checkout
+      - run: go vet
+      - run: go lint
