@@ -23,7 +23,6 @@ type Stats struct {
 
 const (
 	DATE_FORMAT = "2006-01-02"
-	// LOCAL_CLONE_PREFIX = "/tmp"
 )
 
 var (
