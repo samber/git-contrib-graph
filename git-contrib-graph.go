@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
@@ -195,7 +196,7 @@ func getInitialCommitStats(c *object.Commit) (int, int, error) {
 	return file, addition, err
 }
 
-func getRepo(git_path string, git_remote string) object.CommitIter {
+func getRepo(git_path string, git_remote string, branch string) object.CommitIter {
 	var err error
 	var repo *git.Repository
 	var path string
@@ -205,9 +206,21 @@ func getRepo(git_path string, git_remote string) object.CommitIter {
 		repo, err = git.PlainOpen(git_path)
 	} else if git_remote != "" {
 		path = git_remote
+
+		// Get master branch by default
+		referenceName := plumbing.Master
+		if branch != "" {
+			referenceName = plumbing.ReferenceName(fmt.Sprintf("refs/heads/%s", branch))
+		}
+
+		if !referenceName.IsBranch() {
+			log.Fatalf("%s is not a valid branch", branch)
+		}
+
 		repo, err = git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
-			URL:          git_remote,
-			SingleBranch: true,
+			URL:           git_remote,
+			SingleBranch:  true,
+			ReferenceName: referenceName,
 		})
 	} else {
 		log.Fatal("Repository not found")
@@ -230,10 +243,11 @@ func getRepo(git_path string, git_remote string) object.CommitIter {
 	return cIter
 }
 
-func getConfig() (string, string) {
+func getConfig() (string, string, string) {
 	git_path := flag.String("git-path", "", "Fetch logs from local git repository (bare or normal)")
 	git_remote := flag.String("git-remote", "", "Fetch logs from remote git repository Github, Gitlab...")
 	no_colors := flag.Bool("no-colors", false, "Disabled colors in output")
+	branch := flag.String("branch", "", "Specific branch to get logs from")
 
 	flag.IntVar(&NBR_COLUMN, "max-columns", 80, "Number of columns in your terminal or output")
 	flag.StringVar(&INTERVAL, "interval", "day", "Display contributions per day, week or month")
@@ -255,14 +269,14 @@ func getConfig() (string, string) {
 		log.Fatal("Invalid date range: %s", INTERVAL)
 	}
 
-	return *git_path, *git_remote
+	return *git_path, *git_remote, *branch
 }
 
 func main() {
-	git_path, git_remote := getConfig()
+	git_path, git_remote, branch := getConfig()
 	contribs := map[string]map[string]Stats{}
 
-	cIter := getRepo(git_path, git_remote)
+	cIter := getRepo(git_path, git_remote, branch)
 
 	// scan history
 	err := cIter.ForEach(func(c *object.Commit) error {
