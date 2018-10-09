@@ -1,0 +1,12 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.11
+    working_directory: /go/src/github.com/samber/git-contrib-graph
+    steps:
+      - checkout
+      - run: go get -v -t -d ./...
+      - run: go build
+      - run: go vet
+      - run: go lint
