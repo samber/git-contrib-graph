@@ -205,7 +205,8 @@ func getRepo(git_path string, git_remote string) object.CommitIter {
 		repo, err = git.PlainOpen(git_path)
 	} else if git_remote != "" {
 		path = git_remote
-		dir, err := ioutil.TempDir("", git_path)
+		parts := strings.Split(path, "/")
+		dir, err := ioutil.TempDir("", parts[len(parts)-1])
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -315,7 +316,7 @@ func main() {
 			}
 		}
 
-		day.Commits += 1
+		day.Commits++
 		contribs[author][date] = day
 		return nil
 	})
