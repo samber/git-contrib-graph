@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math"
 	"os"
@@ -11,7 +12,6 @@ import (
 
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
-	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
 
 type Stats struct {
@@ -205,7 +205,12 @@ func getRepo(git_path string, git_remote string) object.CommitIter {
 		repo, err = git.PlainOpen(git_path)
 	} else if git_remote != "" {
 		path = git_remote
-		repo, err = git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
+		parts := strings.Split(path, "/")
+		dir, err := ioutil.TempDir("", parts[len(parts)-1])
+		if err != nil {
+			log.Fatal(err)
+		}
+		repo, err = git.PlainClone(dir, false, &git.CloneOptions{
 			URL:          git_remote,
 			SingleBranch: true,
 		})
@@ -241,7 +246,7 @@ func getConfig() (string, string) {
 	flag.Parse()
 
 	if *git_path == "" && *git_remote == "" {
-		fmt.Println("Please provide a --git-path or --git-remote argument\n")
+		fmt.Println("Please provide a --git-path or --git-remote argument")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -252,7 +257,7 @@ func getConfig() (string, string) {
 		RESET_COLOR = ""
 	}
 	if INTERVAL != "day" && INTERVAL != "week" && INTERVAL != "month" {
-		log.Fatal("Invalid date range: %s", INTERVAL)
+		log.Fatalf("Invalid date range: %s", INTERVAL)
 	}
 
 	return *git_path, *git_remote
@@ -302,7 +307,7 @@ func main() {
 			if len(c.ParentHashes) == 0 {
 				f, a, err := getInitialCommitStats(c)
 				if err != nil {
-					log.Fatal("Failed to fetch initial commit stats: %s", err)
+					log.Fatalf("Failed to fetch initial commit stats: %s", err)
 				}
 				day.Files += f
 				day.Addition += a
@@ -311,7 +316,7 @@ func main() {
 			}
 		}
 
-		day.Commits += 1
+		day.Commits++
 		contribs[author][date] = day
 		return nil
 	})
