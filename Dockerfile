@@ -6,6 +6,10 @@ ENTRYPOINT ["/bin/git-contrib-graph"]
 RUN apk add --no-cache git
 
 COPY git-contrib-graph.go /app/
+COPY go.mod /app/
+COPY go.sum /app/
 
-RUN go get gopkg.in/src-d/go-git.v4 \
-    && go build -o /bin/git-contrib-graph /app/git-contrib-graph.go
+WORKDIR /app/
+
+ENV GO111MODULE=on CGO_ENABLED=0
+RUN go build -o /bin/git-contrib-graph /app/git-contrib-graph.go
