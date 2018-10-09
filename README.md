@@ -4,7 +4,7 @@ Displays a github-like contribution graph, of every contributors of a repository
 
 ## Why
 
-I've been developing this tool for getting a fast overview of student involvement in scholar group project.
+I've been developing this tool for getting a fast overview of student involvement in scholar group project, at Epitech (French university).
 
 ## Usage
 
