@@ -11,6 +11,16 @@ jobs:
       - run: go vet ./...
       - run: go get github.com/golang/lint/golint
       - run: golint ./...
-      - run: docker login -u ${DOCKER_HUB_USERNAME} -p ${DOCKER_HUB_PASSWORD}
-      - run: docker build -t samber/git-contrib-graph .
-      - run: docker push samber/git-contrib-graph
+
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      - run: |
+          set -x
+          TAG=$CIRCLE_BRANCH
+          docker login -u ${DOCKER_HUB_USERNAME} -p ${DOCKER_HUB_PASSWORD}
+          docker build -t samber/git-contrib-graph:${TAG} .
+          docker push samber/git-contrib-graph:${TAG}
+          if [ "${TAG}" == "master" ]; then
+              docker push samber/git-contrib-graph:latest
+          fi
