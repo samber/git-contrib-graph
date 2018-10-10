@@ -21,6 +21,8 @@ Usage of git-contrib-graph:
     	Fetch logs from remote git repository Github, Gitlab...
   -interval string
     	Display contributions per day, week or month (default "day")
+  -json 
+    	Display json output contributions object
   -max-columns int
     	Number of columns in your terminal or output (default 80)
   -no-colors
@@ -29,7 +31,7 @@ Usage of git-contrib-graph:
 
 ## Example
 
-Display crontribs per week, with color and including weeks with no commit.
+Display contributions per week, with color and even weeks without any commit.
 
 ```sh
 $ git-contrib-graph --git-remote https://github.com/samber/invoice-as-a-service \
@@ -107,6 +109,21 @@ Per day:
    2018-10-01 | 386(+) 359(-) ++++++++++++++++++++++++++------------------------
 
 ```
+## Json Example
+
+Display contributions per week, with color and even weeks without any commit and json object.
+
+
+```sh
+$ git-contrib-graph --git-remote https://github.com/samber/invoice-as-a-service \
+  --json
+  
+Repo: https://github.com/samber/invoice-as-a-service
+
+Contributions to master, excluding merge commits:
+
+{data:[{"autor": "dev@samuel-berthe.fr", "total": {"commits": 31, "insertions": 7557, "deletions":  127}, "per_day": []} {"autor": "catalin@zmole.ro", "total": {"commits": 4, "insertions":  121, "deletions":   25}, "per_day": [{"date": "2018-03-12", "add": 7042, "sub": 101 } {"date": "2018-03-13", "add": 21, "sub": 0 } {"date": "2018-07-27", "add": 385, "sub": 7 } {"date": "2018-07-28", "add": 109, "sub": 19 } {"date": "2018-10-02", "add": 0, "sub": 0 } {"date": "2018-10-03", "add": 0, "sub": 0 }]} {"autor": "mkingbe@gmail.com", "total": {"commits": 1, "insertions":  386, "deletions":  359}, "per_day": [{"date": "2018-03-12", "add": 7042, "sub": 101 } {"date": "2018-03-13", "add": 21, "sub": 0 } {"date": "2018-07-27", "add": 385, "sub": 7 } {"date": "2018-07-28", "add": 109, "sub": 19 } {"date": "2018-10-02", "add": 0, "sub": 0 } {"date": "2018-10-03", "add": 0, "sub": 0 } {"date": "2018-10-03", "add": 121, "sub": 25 }]}]}
+```
 
 ## Docker
 
@@ -129,7 +146,6 @@ docker run --rm \
 
 ## Todo
 
-- json output
 - image output
 - custom branch
 - clone on filesystem instead of memory

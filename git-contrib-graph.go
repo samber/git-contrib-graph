@@ -26,9 +26,10 @@ const (
 )
 
 var (
-	NBR_COLUMN int
-	INTERVAL   string
-	FULL_GRAPH bool
+	NBR_COLUMN  int
+	INTERVAL    string
+	FULL_GRAPH  bool
+	JSON_OUTPUT bool
 
 	GREEN_COLOR = "\x1b[32m"
 	RED_COLOR   = "\x1b[31m"
@@ -110,7 +111,7 @@ func getIntervalContribs(start time.Time, days map[string]Stats) (int, int, int)
 	return addition, deletion, commits
 }
 
-func printAuthorContribGraph(minDate time.Time, maxDate time.Time, days map[string]Stats) {
+func printAuthorContribGraph(minDate time.Time, maxDate time.Time, days map[string]Stats, out *[]string) {
 	from := minDate
 	to := maxDate.AddDate(0, 0, 1) // maxDate included
 
@@ -126,13 +127,22 @@ func printAuthorContribGraph(minDate time.Time, maxDate time.Time, days map[stri
 
 		// display if FULL_GRAPH parameter is set or if current author commited something
 		if commits > 0 || FULL_GRAPH == true {
-			fmt.Printf(
-				"   %s | %3d(+) %3d(-) %s\n",
-				from.Format(DATE_FORMAT),
-				addition,
-				deletion,
-				getPlusMinusProgression(addition, deletion, NBR_COLUMN-30),
-			)
+			if JSON_OUTPUT {
+				*out = append(*out, fmt.Sprintf(
+					`{"date": "%s", "add": %d, "sub": %d }`,
+					from.Format(DATE_FORMAT),
+					addition,
+					deletion,
+				))
+			} else {
+				fmt.Printf(
+					"   %s | %3d(+) %3d(-) %s\n",
+					from.Format(DATE_FORMAT),
+					addition,
+					deletion,
+					getPlusMinusProgression(addition, deletion, NBR_COLUMN-30),
+				)
+			}
 		}
 
 		// next day
@@ -147,27 +157,44 @@ func printAuthorContribGraph(minDate time.Time, maxDate time.Time, days map[stri
 }
 
 func printAuthors(contribs map[string]map[string]Stats) {
+	var out []string
+	var perDay []string
 	minDate, maxDate := getDateLimits(contribs)
 
 	for author, days := range contribs {
 		commitCount, _, additionSum, deletionSum := getTotalsByAuthor(days)
-
-		// author header
+		if JSON_OUTPUT {
+			out = append(out, fmt.Sprintf(
+				`{"autor": "%s", "total": {"commits": %d, "insertions": %4d, "deletions": %4d}, "per_day": %s}`,
+				author,
+				commitCount,
+				additionSum,
+				deletionSum,
+				perDay,
+			))
+		} else {
+			// author header
+			fmt.Printf(
+				"\n\n%s\n%s\n\n\nAuthor: %s%s%s\n\nTotal:\n   %d commits\n   Insertions: %4d %s\n   Deletions:  %4d %s\n\nPer day:\n",
+				strings.Repeat("#", NBR_COLUMN),
+				strings.Repeat("#", NBR_COLUMN),
+				BLUE_COLOR,
+				author,
+				RESET_COLOR,
+				commitCount,
+				additionSum,
+				getPlusMinusProgression(additionSum, 0, NBR_COLUMN-20),
+				deletionSum,
+				getPlusMinusProgression(0, deletionSum, NBR_COLUMN-20),
+			)
+		}
+		printAuthorContribGraph(minDate, maxDate, days, &perDay)
+	}
+	if JSON_OUTPUT {
 		fmt.Printf(
-			"\n\n%s\n%s\n\n\nAuthor: %s%s%s\n\nTotal:\n   %d commits\n   Insertions: %4d %s\n   Deletions:  %4d %s\n\nPer day:\n",
-			strings.Repeat("#", NBR_COLUMN),
-			strings.Repeat("#", NBR_COLUMN),
-			BLUE_COLOR,
-			author,
-			RESET_COLOR,
-			commitCount,
-			additionSum,
-			getPlusMinusProgression(additionSum, 0, NBR_COLUMN-20),
-			deletionSum,
-			getPlusMinusProgression(0, deletionSum, NBR_COLUMN-20),
+			"{data:%v}\n",
+			out,
 		)
-
-		printAuthorContribGraph(minDate, maxDate, days)
 	}
 }
 
@@ -243,6 +270,7 @@ func getConfig() (string, string) {
 	flag.IntVar(&NBR_COLUMN, "max-columns", 80, "Number of columns in your terminal or output")
 	flag.StringVar(&INTERVAL, "interval", "day", "Display contributions per day, week or month")
 	flag.BoolVar(&FULL_GRAPH, "full-graph", false, "Display days without contributions")
+	flag.BoolVar(&JSON_OUTPUT, "json", false, "Display json output contributions object")
 	flag.Parse()
 
 	if *git_path == "" && *git_remote == "" {
