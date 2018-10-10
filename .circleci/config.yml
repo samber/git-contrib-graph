@@ -22,5 +22,6 @@ jobs:
           docker build -t samber/git-contrib-graph:${TAG} .
           docker push samber/git-contrib-graph:${TAG}
           if [ "${TAG}" == "master" ]; then
+              docker tag samber/git-contrib-graph:${TAG} samber/git-contrib-graph:latest
               docker push samber/git-contrib-graph:latest
           fi
