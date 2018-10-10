@@ -11,3 +11,6 @@ jobs:
       - run: go vet ./...
       - run: go get github.com/golang/lint/golint
       - run: golint ./...
+      - run: docker login -u ${DOCKER_HUB_USERNAME} -p ${DOCKER_HUB_PASSWORD}
+      - run: docker build -t samber/git-contrib-graph .
+      - run: docker push samber/git-contrib-graph
