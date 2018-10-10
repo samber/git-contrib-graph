@@ -165,12 +165,12 @@ func printAuthors(contribs map[string]map[string]Stats) {
 		commitCount, _, additionSum, deletionSum := getTotalsByAuthor(days)
 		if JSON_OUTPUT {
 			out = append(out, fmt.Sprintf(
-				`{"autor": "%s", "total": {"commits": %d, "insertions": %4d, "deletions": %4d}, "per_day": %s}`,
+				`{"author": "%s", "total": {"commits": %d, "insertions": %4d, "deletions": %d}, "graph": [%s]}`,
 				author,
 				commitCount,
 				additionSum,
 				deletionSum,
-				perDay,
+				strings.Join(perDay, ", "),
 			))
 		} else {
 			// author header
@@ -192,8 +192,9 @@ func printAuthors(contribs map[string]map[string]Stats) {
 	}
 	if JSON_OUTPUT {
 		fmt.Printf(
-			"{data:%v}\n",
-			out,
+			`{"interval": "%s", "contributors": [%v]}`,
+			INTERVAL,
+			strings.Join(out, ", "),
 		)
 	}
 }
@@ -256,8 +257,10 @@ func getRepo(git_path string, git_remote string) object.CommitIter {
 		log.Fatalf("Error: %s", err)
 	}
 
-	fmt.Printf("Repo: %s\n\n", path)
-	fmt.Printf("Contributions to master, excluding merge commits:\n\n")
+	if JSON_OUTPUT == false {
+		fmt.Printf("Repo: %s\n\n", path)
+		fmt.Printf("Contributions to master, excluding merge commits:\n\n")
+	}
 
 	return cIter
 }
