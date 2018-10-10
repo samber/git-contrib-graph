@@ -29,7 +29,7 @@ Usage of git-contrib-graph:
 
 ## Example
 
-Display crontribs per week, with color and even weeks without any commit.
+Display crontribs per week, with color and including weeks with no commit.
 
 ```sh
 $ git-contrib-graph --git-remote https://github.com/samber/invoice-as-a-service \
@@ -105,7 +105,7 @@ Per day:
    2018-08-01 |   0(+)   0(-)
    2018-09-01 |   0(+)   0(-)
    2018-10-01 | 386(+) 359(-) ++++++++++++++++++++++++++------------------------
- 
+
 ```
 
 ## Docker
