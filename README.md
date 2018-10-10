@@ -4,7 +4,7 @@ Displays a github-like contribution graph, of every contributors of a repository
 
 ## Why
 
-I've been developing this tool for getting a fast overview of student involvement in scholar group project.
+I've been developing this tool for getting a fast overview of student involvement in scholar group project, at Epitech (French university).
 
 ## Usage
 
@@ -107,7 +107,7 @@ Per day:
    2018-08-01 |   0(+)   0(-)
    2018-09-01 |   0(+)   0(-)
    2018-10-01 | 386(+) 359(-) ++++++++++++++++++++++++++------------------------
- 
+
 ```
 ## Json Example
 
@@ -160,7 +160,6 @@ docker run --rm \
 ### Run
 
 ```sh
-$ go get gopkg.in/src-d/go-git.v4
 $ go run git-contrib-graph.go --git-remote https://github.com/samber/invoice-as-a-service \
 	--full-graph \
 	--max-columns 100 \
