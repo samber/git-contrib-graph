@@ -105,7 +105,6 @@ Per day:
    2018-08-01 |   0(+)   0(-)
    2018-09-01 |   0(+)   0(-)
    2018-10-01 | 386(+) 359(-) ++++++++++++++++++++++++++------------------------
- 
 ```
 
 ## Docker
@@ -144,7 +143,6 @@ docker run --rm \
 ### Run
 
 ```sh
-$ go get gopkg.in/src-d/go-git.v4
 $ go run git-contrib-graph.go --git-remote https://github.com/samber/invoice-as-a-service \
 	--full-graph \
 	--max-columns 100 \
