@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -19,6 +20,23 @@ type Stats struct {
 	Files    int
 	Addition int
 	Deletion int
+}
+
+type TotalStats struct {
+	Interval     string
+	Contributors []ContributorStats
+}
+
+type ContributorStats struct {
+	Author      string
+	Totals      Stats
+	PerInterval []IntervalStats
+}
+
+type IntervalStats struct {
+	Date      time.Time
+	Addittion int
+	Deletion  int
 }
 
 const (
@@ -111,7 +129,7 @@ func getIntervalContribs(start time.Time, days map[string]Stats) (int, int, int)
 	return addition, deletion, commits
 }
 
-func printAuthorContribGraph(minDate time.Time, maxDate time.Time, days map[string]Stats, out *[]string) {
+func aggregateIntervalStatistics(minDate time.Time, maxDate time.Time, days map[string]Stats) []IntervalStats {
 	from := minDate
 	to := maxDate.AddDate(0, 0, 1) // maxDate included
 
@@ -122,27 +140,17 @@ func printAuthorContribGraph(minDate time.Time, maxDate time.Time, days map[stri
 		from = from.AddDate(0, 0, -from.Day()+1)
 	}
 
+	var iss []IntervalStats
 	for from.Before(to) {
 		addition, deletion, commits := getIntervalContribs(from, days)
 
 		// display if FULL_GRAPH parameter is set or if current author commited something
 		if commits > 0 || FULL_GRAPH == true {
-			if JSON_OUTPUT {
-				*out = append(*out, fmt.Sprintf(
-					`{"date": "%s", "add": %d, "sub": %d }`,
-					from.Format(DATE_FORMAT),
-					addition,
-					deletion,
-				))
-			} else {
-				fmt.Printf(
-					"   %s | %3d(+) %3d(-) %s\n",
-					from.Format(DATE_FORMAT),
-					addition,
-					deletion,
-					getPlusMinusProgression(addition, deletion, NBR_COLUMN-30),
-				)
-			}
+			iss = append(iss, IntervalStats{
+				Date:     from,
+				Add:      addition,
+				Deletion: deletion,
+			})
 		}
 
 		// next day
@@ -154,49 +162,34 @@ func printAuthorContribGraph(minDate time.Time, maxDate time.Time, days map[stri
 			from = from.AddDate(0, 1, 0)
 		}
 	}
+
+	return iss
 }
 
-func printAuthors(contribs map[string]map[string]Stats) {
-	var out []string
-	var perDay []string
+func aggregateAuthors(contribs map[string]map[string]Stats) TotalStats {
 	minDate, maxDate := getDateLimits(contribs)
+
+	totalStats := TotalStats{
+		Interval: INTERVAL,
+	}
 
 	for author, days := range contribs {
 		commitCount, _, additionSum, deletionSum := getTotalsByAuthor(days)
-		if JSON_OUTPUT {
-			out = append(out, fmt.Sprintf(
-				`{"author": "%s", "total": {"commits": %d, "insertions": %4d, "deletions": %d}, "graph": [%s]}`,
-				author,
-				commitCount,
-				additionSum,
-				deletionSum,
-				strings.Join(perDay, ", "),
-			))
-		} else {
-			// author header
-			fmt.Printf(
-				"\n\n%s\n%s\n\n\nAuthor: %s%s%s\n\nTotal:\n   %d commits\n   Insertions: %4d %s\n   Deletions:  %4d %s\n\nPer day:\n",
-				strings.Repeat("#", NBR_COLUMN),
-				strings.Repeat("#", NBR_COLUMN),
-				BLUE_COLOR,
-				author,
-				RESET_COLOR,
-				commitCount,
-				additionSum,
-				getPlusMinusProgression(additionSum, 0, NBR_COLUMN-20),
-				deletionSum,
-				getPlusMinusProgression(0, deletionSum, NBR_COLUMN-20),
-			)
+
+		contribStats := ContributorStats{
+			Author: author,
+			Totals: Stats{
+				Commits:  commitCount,
+				Addition: additionSum,
+				Deletion: deletionSum,
+			},
 		}
-		printAuthorContribGraph(minDate, maxDate, days, &perDay)
+
+		contribStats.PerInterval = aggregateIntervalStatistics(minDate, maxDate, days)
+		totalStats.Contributors = append(totalStats.Contributors, contribStats)
 	}
-	if JSON_OUTPUT {
-		fmt.Printf(
-			`{"interval": "%s", "contributors": [%v]}`,
-			INTERVAL,
-			strings.Join(out, ", "),
-		)
-	}
+
+	return totalStats
 }
 
 func getInitialCommitStats(c *object.Commit) (int, int, error) {
@@ -356,5 +349,12 @@ func main() {
 		log.Fatalf("Error: %s", err)
 	}
 
-	printAuthors(contribs)
+	totals := aggregateAuthors(contribs)
+
+	if JSON_OUTPUT {
+		enc := json.NewEncoder(os.Stdout)
+		enc.Encode(totals)
+	} else {
+		fmt.Print(totals)
+	}
 }
