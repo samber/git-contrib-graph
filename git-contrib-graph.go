@@ -158,21 +158,12 @@ func printAuthorContribGraph(minDate time.Time, maxDate time.Time, days map[stri
 
 func printAuthors(contribs map[string]map[string]Stats) {
 	var out []string
-	var perDay []string
 	minDate, maxDate := getDateLimits(contribs)
-
+	
 	for author, days := range contribs {
 		commitCount, _, additionSum, deletionSum := getTotalsByAuthor(days)
-		if JSON_OUTPUT {
-			out = append(out, fmt.Sprintf(
-				`{"author": "%s", "total": {"commits": %d, "insertions": %4d, "deletions": %d}, "graph": [%s]}`,
-				author,
-				commitCount,
-				additionSum,
-				deletionSum,
-				strings.Join(perDay, ", "),
-			))
-		} else {
+		var perDay []string
+		if !JSON_OUTPUT {
 			// author header
 			fmt.Printf(
 				"\n\n%s\n%s\n\n\nAuthor: %s%s%s\n\nTotal:\n   %d commits\n   Insertions: %4d %s\n   Deletions:  %4d %s\n\nPer day:\n",
@@ -188,8 +179,21 @@ func printAuthors(contribs map[string]map[string]Stats) {
 				getPlusMinusProgression(0, deletionSum, NBR_COLUMN-20),
 			)
 		}
+
 		printAuthorContribGraph(minDate, maxDate, days, &perDay)
+
+		if JSON_OUTPUT {
+			out = append(out, fmt.Sprintf(
+				`{"author": "%s", "total": {"commits": %d, "insertions": %4d, "deletions": %d}, "graph": [%s]}`,
+				author,
+				commitCount,
+				additionSum,
+				deletionSum,
+				strings.Join(perDay, ", "),
+			))
+		}
 	}
+
 	if JSON_OUTPUT {
 		fmt.Printf(
 			`{"interval": "%s", "contributors": [%v]}`,
