@@ -26,10 +26,11 @@ const (
 )
 
 var (
-	NBR_COLUMN  int
-	INTERVAL    string
-	FULL_GRAPH  bool
-	JSON_OUTPUT bool
+	NBR_COLUMN   int
+	INTERVAL     string
+	FULL_GRAPH   bool
+	JSON_OUTPUT  bool
+	AUTHOR_EMAIL string
 
 	GREEN_COLOR = "\x1b[32m"
 	RED_COLOR   = "\x1b[31m"
@@ -274,6 +275,7 @@ func getConfig() (string, string) {
 	flag.StringVar(&INTERVAL, "interval", "day", "Display contributions per day, week or month")
 	flag.BoolVar(&FULL_GRAPH, "full-graph", false, "Display days without contributions")
 	flag.BoolVar(&JSON_OUTPUT, "json", false, "Display json output contributions object")
+	flag.StringVar(&AUTHOR_EMAIL, "author-email", "", "Display graph for a single committer")
 	flag.Parse()
 
 	if *git_path == "" && *git_remote == "" {
@@ -303,8 +305,11 @@ func main() {
 	// scan history
 	err := cIter.ForEach(func(c *object.Commit) error {
 		// id := c.Hash.String()
-		date := c.Author.When.Format("2006-01-02")
 		author := c.Author.Email
+		if AUTHOR_EMAIL != "" && author != AUTHOR_EMAIL {
+			return nil
+		}
+		date := c.Author.When.Format(DATE_FORMAT)
 
 		if _, ok := contribs[author]; ok == false {
 			// init author
