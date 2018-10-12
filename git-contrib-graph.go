@@ -16,27 +16,80 @@ import (
 )
 
 type Stats struct {
-	Commits  int
-	Files    int
+	Commits  int `json:"commits"`
+	Files    int `json:"-"`
+	Addition int `json:"insertions"`
+	Deletion int `json:"deletions"`
+}
+
+type TotalStats struct {
+	Interval     string             `json:"interval"`
+	Contributors []ContributorStats `json:"contributors"`
+}
+
+func (ts TotalStats) String() string {
+	b := &strings.Builder{}
+
+	for _, cs := range ts.Contributors {
+		b.WriteString(cs.String())
+	}
+
+	return b.String()
+}
+
+type ContributorStats struct {
+	Author string          `json:"author"`
+	Totals Stats           `json:"totals"`
+	Graph  []IntervalStats `json:"graph"`
+}
+
+func (cs ContributorStats) String() string {
+	b := &strings.Builder{}
+
+	fmt.Fprintf(
+		b,
+		"\n\n%s\n%s\n\n\nAuthor: %s%s%s\n\nTotal:\n   %d commits\n   Insertions: %4d %s\n   Deletions:  %4d %s\n\nPer day:\n",
+		strings.Repeat("#", NBR_COLUMN),
+		strings.Repeat("#", NBR_COLUMN),
+		BLUE_COLOR,
+		cs.Author,
+		RESET_COLOR,
+		cs.Totals.Commits,
+		cs.Totals.Addition,
+		getPlusMinusProgression(cs.Totals.Addition, 0, NBR_COLUMN-20),
+		cs.Totals.Deletion,
+		getPlusMinusProgression(0, cs.Totals.Deletion, NBR_COLUMN-20),
+	)
+
+	for _, is := range cs.Graph {
+		b.WriteString(is.String())
+	}
+
+	return b.String()
+}
+
+type IntervalStats struct {
+	Date     time.Time
 	Addition int
 	Deletion int
 }
 
-type TotalStats struct {
-	Interval     string
-	Contributors []ContributorStats
+func (is IntervalStats) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`{"date": %q, "add": %d, "sub": %d}`,
+		is.Date.Format(DATE_FORMAT),
+		is.Addition,
+		is.Deletion,
+	)), nil
 }
 
-type ContributorStats struct {
-	Author      string
-	Totals      Stats
-	PerInterval []IntervalStats
-}
-
-type IntervalStats struct {
-	Date      time.Time
-	Addittion int
-	Deletion  int
+func (is IntervalStats) String() string {
+	return fmt.Sprintf(
+		"   %s | %3d(+) %3d(-) %s\n",
+		is.Date.Format(DATE_FORMAT),
+		is.Addition,
+		is.Deletion,
+		getPlusMinusProgression(is.Addition, is.Deletion, NBR_COLUMN-30),
+	)
 }
 
 const (
@@ -148,7 +201,7 @@ func aggregateIntervalStatistics(minDate time.Time, maxDate time.Time, days map[
 		if commits > 0 || FULL_GRAPH == true {
 			iss = append(iss, IntervalStats{
 				Date:     from,
-				Add:      addition,
+				Addition: addition,
 				Deletion: deletion,
 			})
 		}
@@ -185,7 +238,7 @@ func aggregateAuthors(contribs map[string]map[string]Stats) TotalStats {
 			},
 		}
 
-		contribStats.PerInterval = aggregateIntervalStatistics(minDate, maxDate, days)
+		contribStats.Graph = aggregateIntervalStatistics(minDate, maxDate, days)
 		totalStats.Contributors = append(totalStats.Contributors, contribStats)
 	}
 
@@ -353,7 +406,10 @@ func main() {
 
 	if JSON_OUTPUT {
 		enc := json.NewEncoder(os.Stdout)
-		enc.Encode(totals)
+		err := enc.Encode(totals)
+		if err != nil {
+			log.Fatal(err)
+		}
 	} else {
 		fmt.Print(totals)
 	}
