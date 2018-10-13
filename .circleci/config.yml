@@ -10,7 +10,8 @@ jobs:
       - run: go build ./...
       - run: go vet ./...
       - run: diff -u <(echo -n) <(gofmt -d ./...)
-      - run: go get github.com/golang/lint/golint
+      - run: go get golang.org/x/lint/golint
+      # - run: go get github.com/golang/lint/golint
       - run: golint ./...
 
       - setup_remote_docker:
