@@ -15,19 +15,19 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-type Stats struct {
+type stats struct {
 	Commits  int `json:"commits"`
 	Files    int `json:"-"`
 	Addition int `json:"insertions"`
 	Deletion int `json:"deletions"`
 }
 
-type TotalStats struct {
+type totalStats struct {
 	Interval     string             `json:"interval"`
-	Contributors []ContributorStats `json:"contributors"`
+	Contributors []contributorStats `json:"contributors"`
 }
 
-func (ts TotalStats) String() string {
+func (ts totalStats) String() string {
 	b := &strings.Builder{}
 
 	for _, cs := range ts.Contributors {
@@ -37,28 +37,28 @@ func (ts TotalStats) String() string {
 	return b.String()
 }
 
-type ContributorStats struct {
+type contributorStats struct {
 	Author string          `json:"author"`
-	Totals Stats           `json:"totals"`
-	Graph  []IntervalStats `json:"graph"`
+	Totals stats           `json:"totals"`
+	Graph  []intervalStats `json:"graph"`
 }
 
-func (cs ContributorStats) String() string {
+func (cs contributorStats) String() string {
 	b := &strings.Builder{}
 
 	fmt.Fprintf(
 		b,
 		"\n\n%s\n%s\n\n\nAuthor: %s%s%s\n\nTotal:\n   %d commits\n   Insertions: %4d %s\n   Deletions:  %4d %s\n\nPer day:\n",
-		strings.Repeat("#", NBR_COLUMN),
-		strings.Repeat("#", NBR_COLUMN),
-		BLUE_COLOR,
+		strings.Repeat("#", nbrColumn),
+		strings.Repeat("#", nbrColumn),
+		blueColor,
 		cs.Author,
-		RESET_COLOR,
+		resetColor,
 		cs.Totals.Commits,
 		cs.Totals.Addition,
-		getPlusMinusProgression(cs.Totals.Addition, 0, NBR_COLUMN-20),
+		getPlusMinusProgression(cs.Totals.Addition, 0, nbrColumn-20),
 		cs.Totals.Deletion,
-		getPlusMinusProgression(0, cs.Totals.Deletion, NBR_COLUMN-20),
+		getPlusMinusProgression(0, cs.Totals.Deletion, nbrColumn-20),
 	)
 
 	for _, is := range cs.Graph {
@@ -68,48 +68,48 @@ func (cs ContributorStats) String() string {
 	return b.String()
 }
 
-type IntervalStats struct {
+type intervalStats struct {
 	Date     time.Time
 	Addition int
 	Deletion int
 }
 
-func (is IntervalStats) MarshalJSON() ([]byte, error) {
+func (is intervalStats) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`{"date": %q, "add": %d, "sub": %d}`,
-		is.Date.Format(DATE_FORMAT),
+		is.Date.Format(dateFormat),
 		is.Addition,
 		is.Deletion,
 	)), nil
 }
 
-func (is IntervalStats) String() string {
+func (is intervalStats) String() string {
 	return fmt.Sprintf(
 		"   %s | %3d(+) %3d(-) %s\n",
-		is.Date.Format(DATE_FORMAT),
+		is.Date.Format(dateFormat),
 		is.Addition,
 		is.Deletion,
-		getPlusMinusProgression(is.Addition, is.Deletion, NBR_COLUMN-30),
+		getPlusMinusProgression(is.Addition, is.Deletion, nbrColumn-30),
 	)
 }
 
 const (
-	DATE_FORMAT = "2006-01-02"
+	dateFormat = "2006-01-02"
 )
 
 var (
-	NBR_COLUMN   int
-	INTERVAL     string
-	FULL_GRAPH   bool
-	JSON_OUTPUT  bool
-	AUTHOR_EMAIL string
+	nbrColumn   int
+	interval    string
+	fullGraph   bool
+	jsonOutput  bool
+	authorEmail string
 
-	GREEN_COLOR = "\x1b[32m"
-	RED_COLOR   = "\x1b[31m"
-	BLUE_COLOR  = "\x1b[94m"
-	RESET_COLOR = "\x1b[0m"
+	greenColor = "\x1b[32m"
+	redColor   = "\x1b[31m"
+	blueColor  = "\x1b[94m"
+	resetColor = "\x1b[0m"
 )
 
-func getTotalsByAuthor(days map[string]Stats) (int, int, int, int) {
+func getTotalsByAuthor(days map[string]stats) (int, int, int, int) {
 	commitCount := 0
 	filesSum := 0
 	additionSum := 0
@@ -131,16 +131,16 @@ func getPlusMinusProgression(additions int, deletions int, maxChars int) string 
 		additions = int(math.Round(float64(additions) * rate))
 		deletions = int(math.Round(float64(deletions) * rate))
 	}
-	return GREEN_COLOR + strings.Repeat("+", additions) + RED_COLOR + strings.Repeat("-", deletions) + RESET_COLOR
+	return greenColor + strings.Repeat("+", additions) + redColor + strings.Repeat("-", deletions) + resetColor
 }
 
-func getDateLimits(contribs map[string]map[string]Stats) (time.Time, time.Time) {
+func getDateLimits(contribs map[string]map[string]stats) (time.Time, time.Time) {
 	min := time.Time{}
 	max := time.Time{}
 
 	for _, v := range contribs {
-		for k, _ := range v {
-			if date, err := time.Parse(DATE_FORMAT, k); err == nil {
+		for k := range v {
+			if date, err := time.Parse(dateFormat, k); err == nil {
 				if min.IsZero() || date.Before(min) {
 					min = date
 				}
@@ -155,22 +155,22 @@ func getDateLimits(contribs map[string]map[string]Stats) (time.Time, time.Time) 
 	return min, max
 }
 
-func getIntervalContribs(start time.Time, days map[string]Stats) (int, int, int) {
+func getIntervalContribs(start time.Time, days map[string]stats) (int, int, int) {
 	addition := 0
 	deletion := 0
 	commits := 0
 
-	// compute last day of stats collection, based on INTERVAL parameter
+	// compute last day of stats collection, based on interval parameter
 	end := start.AddDate(0, 0, 1)
-	if INTERVAL == "week" {
+	if interval == "week" {
 		end = start.AddDate(0, 0, 7)
-	} else if INTERVAL == "month" {
+	} else if interval == "month" {
 		end = start.AddDate(0, 1, 0)
 	}
 
 	// addition changes in range
 	for start.Before(end) {
-		strDate := start.Format(DATE_FORMAT)
+		strDate := start.Format(dateFormat)
 		day, ok := days[strDate]
 		if ok == true {
 			addition += day.Addition
@@ -183,24 +183,24 @@ func getIntervalContribs(start time.Time, days map[string]Stats) (int, int, int)
 	return addition, deletion, commits
 }
 
-func aggregateIntervalStatistics(minDate time.Time, maxDate time.Time, days map[string]Stats) []IntervalStats {
+func aggregateIntervalStatistics(minDate time.Time, maxDate time.Time, days map[string]stats) []intervalStats {
 	from := minDate
 	to := maxDate.AddDate(0, 0, 1) // maxDate included
 
 	// `from` must be on sunday if interval == "week" or at the begining of the month if interval == "month"
-	if INTERVAL == "week" {
+	if interval == "week" {
 		from = from.AddDate(0, 0, -int(from.Weekday()))
-	} else if INTERVAL == "month" {
+	} else if interval == "month" {
 		from = from.AddDate(0, 0, -from.Day()+1)
 	}
 
-	var iss []IntervalStats
+	var iss []intervalStats
 	for from.Before(to) {
 		addition, deletion, commits := getIntervalContribs(from, days)
 
-		// display if FULL_GRAPH parameter is set or if current author commited something
-		if commits > 0 || FULL_GRAPH == true {
-			iss = append(iss, IntervalStats{
+		// display if fullGraph parameter is set or if current author commited something
+		if commits > 0 || fullGraph == true {
+			iss = append(iss, intervalStats{
 				Date:     from,
 				Addition: addition,
 				Deletion: deletion,
@@ -208,9 +208,9 @@ func aggregateIntervalStatistics(minDate time.Time, maxDate time.Time, days map[
 		}
 
 		// next day
-		if INTERVAL == "day" {
+		if interval == "day" {
 			from = from.AddDate(0, 0, 1)
-		} else if INTERVAL == "week" {
+		} else if interval == "week" {
 			from = from.AddDate(0, 0, 7)
 		} else {
 			from = from.AddDate(0, 1, 0)
@@ -220,19 +220,19 @@ func aggregateIntervalStatistics(minDate time.Time, maxDate time.Time, days map[
 	return iss
 }
 
-func aggregateAuthors(contribs map[string]map[string]Stats) TotalStats {
+func aggregateAuthors(contribs map[string]map[string]stats) totalStats {
 	minDate, maxDate := getDateLimits(contribs)
 
-	totalStats := TotalStats{
-		Interval: INTERVAL,
+	totalStats := totalStats{
+		Interval: interval,
 	}
 
 	for author, days := range contribs {
 		commitCount, _, additionSum, deletionSum := getTotalsByAuthor(days)
 
-		contribStats := ContributorStats{
+		contribStats := contributorStats{
 			Author: author,
-			Totals: Stats{
+			Totals: stats{
 				Commits:  commitCount,
 				Addition: additionSum,
 				Deletion: deletionSum,
@@ -270,23 +270,23 @@ func getInitialCommitStats(c *object.Commit) (int, int, error) {
 	return file, addition, err
 }
 
-func getRepo(git_path string, git_remote string) object.CommitIter {
+func getRepo(gitPath string, gitRemote string) object.CommitIter {
 	var err error
 	var repo *git.Repository
 	var path string
 
-	if git_path != "" {
-		path = git_path
-		repo, err = git.PlainOpen(git_path)
-	} else if git_remote != "" {
-		path = git_remote
+	if gitPath != "" {
+		path = gitPath
+		repo, err = git.PlainOpen(gitPath)
+	} else if gitRemote != "" {
+		path = gitRemote
 		parts := strings.Split(path, "/")
 		dir, err := ioutil.TempDir("", parts[len(parts)-1])
 		if err != nil {
 			log.Fatal(err)
 		}
 		repo, err = git.PlainClone(dir, false, &git.CloneOptions{
-			URL:          git_remote,
+			URL:          gitRemote,
 			SingleBranch: true,
 		})
 	} else {
@@ -304,7 +304,7 @@ func getRepo(git_path string, git_remote string) object.CommitIter {
 		log.Fatalf("Error: %s", err)
 	}
 
-	if JSON_OUTPUT == false {
+	if jsonOutput == false {
 		fmt.Printf("Repo: %s\n\n", path)
 		fmt.Printf("Contributions to master, excluding merge commits:\n\n")
 	}
@@ -313,57 +313,57 @@ func getRepo(git_path string, git_remote string) object.CommitIter {
 }
 
 func getConfig() (string, string) {
-	git_path := flag.String("git-path", "", "Fetch logs from local git repository (bare or normal)")
-	git_remote := flag.String("git-remote", "", "Fetch logs from remote git repository Github, Gitlab...")
-	no_colors := flag.Bool("no-colors", false, "Disabled colors in output")
+	gitPath := flag.String("git-path", "", "Fetch logs from local git repository (bare or normal)")
+	gitRemote := flag.String("git-remote", "", "Fetch logs from remote git repository Github, Gitlab...")
+	noColors := flag.Bool("no-colors", false, "Disabled colors in output")
 
-	flag.IntVar(&NBR_COLUMN, "max-columns", 80, "Number of columns in your terminal or output")
-	flag.StringVar(&INTERVAL, "interval", "day", "Display contributions per day, week or month")
-	flag.BoolVar(&FULL_GRAPH, "full-graph", false, "Display days without contributions")
-	flag.BoolVar(&JSON_OUTPUT, "json", false, "Display json output contributions object")
-	flag.StringVar(&AUTHOR_EMAIL, "author-email", "", "Display graph for a single committer")
+	flag.IntVar(&nbrColumn, "max-columns", 80, "Number of columns in your terminal or output")
+	flag.StringVar(&interval, "interval", "day", "Display contributions per day, week or month")
+	flag.BoolVar(&fullGraph, "full-graph", false, "Display days without contributions")
+	flag.BoolVar(&jsonOutput, "json", false, "Display json output contributions object")
+	flag.StringVar(&authorEmail, "author-email", "", "Display graph for a single committer")
 	flag.Parse()
 
-	if *git_path == "" && *git_remote == "" {
+	if *gitPath == "" && *gitRemote == "" {
 		fmt.Println("Please provide a --git-path or --git-remote argument")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-	if *no_colors == true {
-		BLUE_COLOR = ""
-		GREEN_COLOR = ""
-		RED_COLOR = ""
-		RESET_COLOR = ""
+	if *noColors == true {
+		blueColor = ""
+		greenColor = ""
+		redColor = ""
+		resetColor = ""
 	}
-	if INTERVAL != "day" && INTERVAL != "week" && INTERVAL != "month" {
-		log.Fatalf("Invalid date range: %s", INTERVAL)
+	if interval != "day" && interval != "week" && interval != "month" {
+		log.Fatalf("Invalid date range: %s", interval)
 	}
 
-	return *git_path, *git_remote
+	return *gitPath, *gitRemote
 }
 
 func main() {
-	git_path, git_remote := getConfig()
-	contribs := map[string]map[string]Stats{}
+	gitPath, gitRemote := getConfig()
+	contribs := map[string]map[string]stats{}
 
-	cIter := getRepo(git_path, git_remote)
+	cIter := getRepo(gitPath, gitRemote)
 
 	// scan history
 	err := cIter.ForEach(func(c *object.Commit) error {
 		// id := c.Hash.String()
 		author := c.Author.Email
-		if AUTHOR_EMAIL != "" && author != AUTHOR_EMAIL {
+		if authorEmail != "" && author != authorEmail {
 			return nil
 		}
-		date := c.Author.When.Format(DATE_FORMAT)
+		date := c.Author.When.Format(dateFormat)
 
 		if _, ok := contribs[author]; ok == false {
 			// init author
-			contribs[author] = map[string]Stats{}
+			contribs[author] = map[string]stats{}
 		}
 		if _, ok := contribs[author][date]; ok == false {
 			// init date (grouped by author)
-			contribs[author][date] = Stats{
+			contribs[author][date] = stats{
 				Commits:  0,
 				Files:    0,
 				Addition: 0,
@@ -409,7 +409,7 @@ func main() {
 
 	totals := aggregateAuthors(contribs)
 
-	if JSON_OUTPUT {
+	if jsonOutput {
 		enc := json.NewEncoder(os.Stdout)
 		err := enc.Encode(totals)
 		if err != nil {
