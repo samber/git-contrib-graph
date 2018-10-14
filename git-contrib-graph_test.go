@@ -10,9 +10,9 @@ import (
 
 func TestCorrectSumTotalsChangesByAuthor(t *testing.T) {
 	convey.Convey("Given two day with changes of a author", t, func() {
-		days := make(map[string]Stats)
-		changesFirstDay := Stats{Addition: 10, Commits: 2, Deletion: 3, Files: 2}
-		changesSecondDay := Stats{Addition: 2, Commits: 1, Deletion: 4, Files: 1}
+		days := make(map[string]stats)
+		changesFirstDay := stats{Addition: 10, Commits: 2, Deletion: 3, Files: 2}
+		changesSecondDay := stats{Addition: 2, Commits: 1, Deletion: 4, Files: 1}
 
 		days["2018-12-10"] = changesFirstDay
 		days["2018-12-11"] = changesSecondDay

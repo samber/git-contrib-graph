@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -8,9 +9,11 @@ import (
 	"log"
 	"math"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
+	chart "github.com/wcharczuk/go-chart"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
@@ -312,10 +315,11 @@ func getRepo(gitPath string, gitRemote string) object.CommitIter {
 	return cIter
 }
 
-func getConfig() (string, string) {
+func getConfig() (string, string, bool) {
 	gitPath := flag.String("git-path", "", "Fetch logs from local git repository (bare or normal)")
 	gitRemote := flag.String("git-remote", "", "Fetch logs from remote git repository Github, Gitlab...")
 	noColors := flag.Bool("no-colors", false, "Disabled colors in output")
+	generateImage := flag.Bool("img", false, "Generate contribution graph")
 
 	flag.IntVar(&nbrColumn, "max-columns", 80, "Number of columns in your terminal or output")
 	flag.StringVar(&interval, "interval", "day", "Display contributions per day, week or month")
@@ -339,11 +343,62 @@ func getConfig() (string, string) {
 		log.Fatalf("Invalid date range: %s", interval)
 	}
 
-	return *gitPath, *gitRemote
+	return *gitPath, *gitRemote, *generateImage
+}
+
+func generateContributionImage(author string, authorContribs map[string]stats) error {
+
+	timeseries := []time.Time{}
+	commitCounts := []float64{}
+
+	sortedDates := []string{}
+	for date := range authorContribs {
+		sortedDates = append(sortedDates, date)
+	}
+	sort.Strings(sortedDates)
+
+	for _, date := range sortedDates {
+		t, err := time.Parse("2006-01-02", date)
+		if err != nil {
+			return err
+		}
+		timeseries = append(timeseries, t)
+		commitCounts = append(commitCounts, float64(authorContribs[date].Commits))
+	}
+
+	fmt.Printf("%s::%f\n", author, commitCounts)
+	fmt.Printf("%s::%s\n\n", author, timeseries)
+
+	graph := chart.Chart{
+
+		XAxis: chart.XAxis{
+			Name:      "Day",
+			NameStyle: chart.StyleShow(),
+			Style:     chart.StyleShow(),
+		},
+		YAxis: chart.YAxis{
+			Name:      "Number of Commits",
+			NameStyle: chart.StyleShow(),
+			Style:     chart.StyleShow(),
+		},
+		Series: []chart.Series{
+			chart.TimeSeries{
+				XValues: timeseries,
+				YValues: commitCounts,
+			},
+		},
+	}
+
+	buffer := bytes.NewBuffer([]byte{})
+	graph.Render(chart.PNG, buffer)
+
+	return ioutil.WriteFile(fmt.Sprintf("%s.png", author), buffer.Bytes(), 0644)
+
 }
 
 func main() {
-	gitPath, gitRemote := getConfig()
+
+	gitPath, gitRemote, generateImage := getConfig()
 	contribs := map[string]map[string]stats{}
 
 	cIter := getRepo(gitPath, gitRemote)
@@ -417,5 +472,13 @@ func main() {
 		}
 	} else {
 		fmt.Print(totals)
+	}
+	if generateImage {
+		for author, authorContribs := range contribs {
+			err := generateContributionImage(author, authorContribs)
+			if err != nil {
+				fmt.Printf("Failed to generate image: %s\n", err)
+			}
+		}
 	}
 }
