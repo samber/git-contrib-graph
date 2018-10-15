@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
+
+	"github.com/samber/git-contrib-graph/pkg/utils/date"
 )
 
 // Flags
@@ -16,6 +19,8 @@ var (
 	AuthorEmail string
 	GitPath     string
 	GitRemote   string
+	SinceDate   time.Time
+	ToDate      time.Time
 )
 
 // Colors
@@ -27,8 +32,10 @@ var (
 )
 
 func init() {
+	var since, to string
+	flag.StringVar(&since, "since", "", "Since contribution date")
+	flag.StringVar(&to, "to", "", "To contribution date")
 	noColors := flag.Bool("no-colors", false, "Disabled colors in output")
-
 	flag.StringVar(&GitPath, "git-path", "", "Fetch logs from local git repository (bare or normal)")
 	flag.StringVar(&GitRemote, "git-remote", "", "Fetch logs from remote git repository Github, Gitlab...")
 	flag.IntVar(&NbrColumn, "max-columns", 80, "Number of columns in your terminal or output")
@@ -37,6 +44,15 @@ func init() {
 	flag.BoolVar(&JSONOutput, "json", false, "Display json output contributions object")
 	flag.StringVar(&AuthorEmail, "author-email", "", "Display graph for a single committer")
 	flag.Parse()
+
+	ToDate = time.Now()
+	if since != "" {
+		SinceDate = date.Parse(since)
+	}
+
+	if to != "" {
+		ToDate = date.Parse(to)
+	}
 
 	if GitPath == "" && GitRemote == "" {
 		fmt.Println("Please provide a --git-path or --git-remote argument")

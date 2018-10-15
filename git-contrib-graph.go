@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/samber/git-contrib-graph/pkg/config"
 	"github.com/samber/git-contrib-graph/pkg/github"
 	graphStats "github.com/samber/git-contrib-graph/pkg/stats"
+	datePkg "github.com/samber/git-contrib-graph/pkg/utils/date"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
@@ -23,7 +25,16 @@ func main() {
 		if config.AuthorEmail != "" && author != config.AuthorEmail {
 			return nil
 		}
-		date := c.Author.When.Format(graphStats.DateFormat)
+		date := c.Author.When.Format(datePkg.DateFormat)
+
+		d, err := time.Parse(datePkg.DateFormat, date)
+		if err != nil {
+			log.Fatalf("Error: %s", err)
+		}
+
+		if !datePkg.InTimeSpan(config.SinceDate, config.ToDate, d) {
+			return nil
+		}
 
 		if _, ok := contribs[author]; ok == false {
 			// init author

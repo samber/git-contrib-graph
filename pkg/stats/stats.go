@@ -7,12 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/samber/git-contrib-graph/pkg/utils/date"
+
 	"github.com/samber/git-contrib-graph/pkg/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
-)
-
-const (
-	DateFormat = "2006-01-02"
 )
 
 type Stats struct {
@@ -76,7 +74,7 @@ type intervalStats struct {
 
 func (is intervalStats) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`{"date": %q, "add": %d, "sub": %d}`,
-		is.Date.Format(DateFormat),
+		is.Date.Format(date.DateFormat),
 		is.Addition,
 		is.Deletion,
 	)), nil
@@ -85,7 +83,7 @@ func (is intervalStats) MarshalJSON() ([]byte, error) {
 func (is intervalStats) String() string {
 	return fmt.Sprintf(
 		"   %s | %3d(+) %3d(-) %s\n",
-		is.Date.Format(DateFormat),
+		is.Date.Format(date.DateFormat),
 		is.Addition,
 		is.Deletion,
 		getPlusMinusProgression(is.Addition, is.Deletion, config.NbrColumn-30),
@@ -173,7 +171,7 @@ func getDateLimits(contribs map[string]map[string]Stats) (time.Time, time.Time) 
 
 	for _, v := range contribs {
 		for k := range v {
-			if date, err := time.Parse(DateFormat, k); err == nil {
+			if date, err := time.Parse(date.DateFormat, k); err == nil {
 				if min.IsZero() || date.Before(min) {
 					min = date
 				}
@@ -203,7 +201,7 @@ func getIntervalContribs(start time.Time, days map[string]Stats) (int, int, int)
 
 	// addition changes in range
 	for start.Before(end) {
-		strDate := start.Format(DateFormat)
+		strDate := start.Format(date.DateFormat)
 		day, ok := days[strDate]
 		if ok == true {
 			addition += day.Addition
