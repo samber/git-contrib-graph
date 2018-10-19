@@ -1,6 +1,7 @@
 package main
 
 import (
+	"sort"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -227,7 +228,15 @@ func aggregateAuthors(contribs map[string]map[string]stats) totalStats {
 		Interval: interval,
 	}
 
-	for author, days := range contribs {
+	var authors []string
+	for author, _ := range contribs {
+		authors = append(authors, author)
+	}
+
+	sort.Strings(authors)
+
+	for _, author := range authors {
+		days := contribs[author]
 		commitCount, _, additionSum, deletionSum := getTotalsByAuthor(days)
 
 		contribStats := contributorStats{
