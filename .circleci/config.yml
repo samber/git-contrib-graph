@@ -3,6 +3,8 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.11
+    environment:
+      - GO111MODULE: "on"
     working_directory: /go/src/github.com/samber/git-contrib-graph
     steps:
       - checkout
@@ -13,6 +15,7 @@ jobs:
       - run: go get golang.org/x/lint/golint
       # - run: go get github.com/golang/lint/golint
       - run: golint ./...
+      - run: go test ./...
 
       - setup_remote_docker:
           docker_layer_caching: true
