@@ -13,6 +13,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/gliderlabs/ssh v0.1.1 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
