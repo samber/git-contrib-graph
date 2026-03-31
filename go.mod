@@ -1,5 +1,7 @@
 module github.com/samber/git-contrib-graph
 
+go 1.26.1
+
 require (
 	github.com/smartystreets/goconvey v1.6.4
 	gopkg.in/src-d/go-git.v4 v4.7.0
@@ -11,6 +13,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/gliderlabs/ssh v0.1.1 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
@@ -23,10 +26,10 @@ require (
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
-	golang.org/x/crypto v0.21.0 // indirect
-	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.0 // indirect
 	gopkg.in/src-d/go-git-fixtures.v3 v3.1.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
