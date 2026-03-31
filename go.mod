@@ -1,5 +1,7 @@
 module github.com/samber/git-contrib-graph
 
+go 1.26.1
+
 require (
 	github.com/smartystreets/goconvey v1.6.4
 	gopkg.in/src-d/go-git.v4 v4.7.0
@@ -30,5 +32,5 @@ require (
 	gopkg.in/src-d/go-billy.v4 v4.3.0 // indirect
 	gopkg.in/src-d/go-git-fixtures.v3 v3.1.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	gopkg.in/yaml.v3 v3.0.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
